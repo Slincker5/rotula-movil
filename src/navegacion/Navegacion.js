@@ -8,6 +8,9 @@ import Logo from "../componentes/Logo";
 import PantallaCarga from "../componentes/PantallaCarga";
 import Login from "../pantallas/Login";
 import Registro from "../pantallas/Registro";
+import Inicio from "../pantallas/Inicio";
+import CrearAfiche from "../pantallas/CrearAfiche";
+import Historial from "../pantallas/Historial";
 import Perfil from "../pantallas/Perfil";
 
 const Pila = createNativeStackNavigator();
@@ -20,6 +23,9 @@ const tema = {
 
 // icono de cada pestana: relleno cuando esta activa y de contorno cuando no
 const iconos = {
+  Inicio: "home",
+  CrearAfiche: "add-circle",
+  Historial: "time",
   Perfil: "person-circle",
 };
 
@@ -37,6 +43,9 @@ function PestanasPrincipales() {
         ),
       })}
     >
+      <Pestanas.Screen name="Inicio" component={Inicio} />
+      <Pestanas.Screen name="CrearAfiche" component={CrearAfiche} options={{ title: "Crear" }} />
+      <Pestanas.Screen name="Historial" component={Historial} />
       <Pestanas.Screen name="Perfil" component={Perfil} />
     </Pestanas.Navigator>
   );
