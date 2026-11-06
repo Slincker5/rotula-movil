@@ -1,0 +1,81 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function esDueno(uid) {
+      return request.auth != null && request.auth.uid == uid;
+    }
+
+    function texto(valor, maximo) {
+      return valor is string && valor.size() <= maximo;
+    }
+
+    function precioValido(valor) {
+      return valor is number && valor > 0;
+    }
+
+    function datosDePerfil(datos) {
+      return texto(datos.nombre, 60)
+        && datos.nombre.size() > 0
+        && texto(datos.apellido, 60)
+        && texto(datos.nombre_negocio, 100);
+    }
+
+    function rotuloValido(r) {
+      return texto(r.ean, 14)
+        && texto(r.descripcion, 120)
+        && r.descripcion.size() > 0
+        && precioValido(r.precio_oferta)
+        && precioValido(r.precio_unitario)
+        && r.copias is int
+        && r.copias > 0
+        && texto(r.fecha_inicio, 10)
+        && texto(r.fecha_fin, 10)
+        && r.fecha_fin >= r.fecha_inicio;
+    }
+
+    function productoValido(p) {
+      return texto(p.ean, 14)
+        && texto(p.descripcion, 120)
+        && p.descripcion.size() > 0
+        && precioValido(p.precio);
+    }
+
+    match /usuarios/{uid} {
+      allow read: if esDueno(uid);
+      allow create: if esDueno(uid)
+        && request.resource.data.email == request.auth.token.email
+        && datosDePerfil(request.resource.data);
+      allow update: if esDueno(uid)
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['nombre', 'apellido', 'nombre_negocio'])
+        && datosDePerfil(request.resource.data);
+
+      match /rotulos/{id} {
+        allow read: if esDueno(uid);
+        allow create: if esDueno(uid)
+          && rotuloValido(request.resource.data)
+          && request.resource.data.documento_id == null;
+        // el unico cambio es vincularlo una vez a su documento al generar el PDF
+        allow update: if esDueno(uid)
+          && resource.data.documento_id == null
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['documento_id'])
+          && request.resource.data.documento_id is string;
+        // lo que ya salio en un PDF se conserva para poder volver a descargarlo
+        allow delete: if esDueno(uid) && resource.data.documento_id == null;
+      }
+
+      match /documentos/{id} {
+        allow read: if esDueno(uid);
+        allow create: if esDueno(uid)
+          && texto(request.resource.data.titulo, 120)
+          && request.resource.data.total_rotulos is int
+          && request.resource.data.total_rotulos > 0;
+      }
+
+      match /productos/{id} {
+        allow read, delete: if esDueno(uid);
+        allow create, update: if esDueno(uid) && productoValido(request.resource.data);
+      }
+    }
+  }
+}

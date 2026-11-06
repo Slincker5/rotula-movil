@@ -2,7 +2,7 @@ import { useCallback, useState } from "react";
 import { FlatList, StyleSheet, View } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
-import { pedir } from "../api/cliente";
+import { listarDocumentos } from "../firebase/rotulos";
 import { colores, radios } from "../tema";
 import Texto from "../componentes/Texto";
 import AvisoError from "../componentes/AvisoError";
@@ -17,7 +17,7 @@ export default function Historial() {
 
   const cargar = async () => {
     try {
-      setDocumentos(await pedir("/api/documentos"));
+      setDocumentos(await listarDocumentos());
       setError("");
     } catch (e) {
       setError(e.message);
@@ -40,7 +40,7 @@ export default function Historial() {
       style={estilos.pantalla}
       contentContainerStyle={estilos.contenido}
       data={documentos}
-      keyExtractor={(d) => String(d.id)}
+      keyExtractor={(d) => d.id}
       renderItem={({ item }) => <TarjetaDocumento documento={item} />}
       ItemSeparatorComponent={() => <View style={{ height: 12 }} />}
       refreshing={refrescando}

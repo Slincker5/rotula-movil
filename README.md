@@ -1,4 +1,4 @@
-# React Native y Figma aplicados al proyecto Rotula
+# Firebase aplicado a React Native en el proyecto Rotula
 
 Ariel Alexander Hernandez Merino (carné: HM192562)<br>
 Gerson Vladimir Borja Alvarez (carné: BA251704)
@@ -6,10 +6,12 @@ Gerson Vladimir Borja Alvarez (carné: BA251704)
 Universidad Don Bosco<br>
 Desarrollo de Software Multiplataforma<br>
 Ing. Alexander Alberto Siguenza<br>
-18 de octubre de 2026
+8 de noviembre de 2026
 
 - Repositorio en GitHub: https://github.com/Slincker5/rotula-movil
-- Video de demostración: https://youtu.be/TfKT8T6o_Bg
+- Video de demostración del Avance 2: **[pega aquí el enlace del video]**
+- Documento de investigación: [docs/Avance2_Firebase_React_Native_APA.pdf](docs/Avance2_Firebase_React_Native_APA.pdf)
+- Video del Avance 1: https://youtu.be/TfKT8T6o_Bg
 - Mockups en Figma: https://www.figma.com/design/TbgoZj5OUNLUFCJI2Mv3hF
 
 ---
@@ -26,18 +28,20 @@ Ing. Alexander Alberto Siguenza<br>
 8. [Validaciones](#validaciones)
 9. [Utilidades de fechas](#utilidades-de-fechas)
 10. [Tema y diseño](#tema-y-diseño)
-11. [Endpoints de la API](#endpoints-de-la-api)
+11. [Base de datos en Firestore](#base-de-datos-en-firestore)
 12. [Trabajo en equipo](#trabajo-en-equipo)
 
 ## Qué es Rotula móvil
 
 [Rotula](https://rotula.vercel.app) es una aplicación web para que tiendas y negocios pequeños creen los rótulos
-de sus ofertas y los descarguen en un PDF listo para imprimir. Rotula móvil es su versión para Android e iOS:
-usa la misma API y la misma base de datos que la web ([Slincker5/rotula](https://github.com/Slincker5/rotula)),
-así que una cuenta creada en la web sirve en el celular y al revés.
+de sus ofertas y los descarguen en un PDF listo para imprimir. Rotula móvil es su versión para Android e iOS.
 
-Avance 1 de Desarrollo de Software Multiplataforma: inicio de sesión y registro, módulo principal con navegación,
-diseño basado en mockups de Figma y validaciones en todos los formularios.
+Desde el Avance 2 la app usa **Firebase**: Authentication para entrar con correo o con Google, y Firestore para
+guardar los datos de cada usuario. La web ([Slincker5/rotula](https://github.com/Slincker5/rotula)) sigue con su
+propia base MySQL, así que **las cuentas y los datos de la web y del celular ya no se comparten**.
+
+Avance 2 de Desarrollo de Software Multiplataforma: autenticación con correo y Google, persistencia en Firestore por
+usuario, módulos secundarios (Mis productos y edición de perfil) e historial de los documentos generados.
 
 ## Tecnologías
 
@@ -47,6 +51,11 @@ diseño basado en mockups de Figma y validaciones en todos los formularios.
 | React Native | 0.86 | Interfaz nativa |
 | React | 19.2 | Componentes y hooks |
 | React Navigation | 7 | Stack de acceso (`native-stack`) y pestañas (`bottom-tabs`) |
+| Firebase JS SDK | 13 | Authentication y Firestore |
+| @react-native-google-signin/google-signin | 17 | Selector de cuentas de Google |
+| @react-native-async-storage/async-storage | 2.2 | Mantener la sesión al cerrar la app |
+| pdf-lib | 1.17 | Generar el PDF de rótulos en el celular |
+| expo-dev-client | SDK 57 | Development build, necesario para entrar con Google |
 | expo-file-system y expo-sharing | SDK 57 | Guardar el PDF en el celular y abrirlo o compartirlo |
 | @react-native-community/datetimepicker | 9.1 | Calendario nativo para elegir fechas |
 | @expo-google-fonts/figtree | 0.4 | Fuente Figtree, la misma de la web |
@@ -54,23 +63,52 @@ diseño basado en mockups de Figma y validaciones en todos los formularios.
 
 ## Cómo correr la app
 
-Requisitos: Node 20 o superior y la app **Expo Go** en el celular, conectado a la misma red Wi-Fi que la PC.
+Requisitos: Node 20 o superior y un celular conectado a la misma red Wi-Fi que la PC.
 
 ```bash
 git clone https://github.com/Slincker5/rotula-movil.git
 cd rotula-movil
 npm install
-npx expo start
 ```
 
-Escanea el código QR con Expo Go (Android) o con la cámara (iPhone).
+Copia `.env.example` como `.env.local` y llénalo con los datos del proyecto de Firebase
+(Configuración del proyecto > Tus apps). Ese archivo no se sube al repositorio.
 
-Por defecto la app usa la API publicada en `https://rotula.vercel.app`. Para apuntar a otra, por ejemplo a la web
-corriendo en tu PC, crea un archivo `.env.local`:
+### Con Expo Go (todo menos Google)
 
 ```bash
-EXPO_PUBLIC_API_URL=http://192.168.1.50:3000
+npx expo start --go
 ```
+
+Escanea el código QR con Expo Go (Android) o con la cámara (iPhone). Se usa `--go` porque, al tener
+`expo-dev-client` instalado, Expo abriría por defecto el development build.
+
+### Con development build (incluye Google, solo Android)
+
+Google usa código nativo, así que no funciona en Expo Go.
+
+1. Pon `google-services.json` en la raíz del proyecto (Firebase > Configuración del proyecto > app Android).
+2. Crea el build con tu cuenta de Expo e instala el APK que genera:
+
+   ```bash
+   npx eas-cli build --profile development --platform android
+   ```
+
+3. Copia la huella SHA-1 del build en Firebase > Configuración del proyecto > app Android:
+
+   ```bash
+   npx eas-cli credentials --platform android
+   ```
+
+4. Vuelve a descargar `google-services.json` después de agregar la huella, crea el build otra vez y corre:
+
+   ```bash
+   npx expo start --dev-client
+   ```
+
+### Reglas de Firestore
+
+Las reglas viven en `firestore.rules`. Si las cambias, publícalas en Firebase > Firestore > Reglas.
 
 > **Versión de Expo:** el proyecto usa **Expo SDK 57** porque es la versión que soporta el Expo Go de las tiendas en
 > octubre de 2026. Cuando salga el Expo Go para SDK 58, se actualiza con `npx expo install expo@^58.0.0` y luego
@@ -82,12 +120,26 @@ EXPO_PUBLIC_API_URL=http://192.168.1.50:3000
 App.js                          carga las fuentes y monta la sesión y la navegación
 index.js                        punto de entrada de Expo
 app.json                        nombre, íconos, identificadores y plugins de Expo
+metro.config.js                 corrige cómo Metro carga tslib (sin esto la app no abre)
+eas.json                        perfil del development build
+firestore.rules                 reglas de seguridad de Firestore
+firebase.json                   configuración de reglas y emuladores
 src/
-  api/
-    cliente.js                  pedir(): fetch a la API de Rotula con la cookie de sesión
-    pdf.js                      abrirPdf(): descarga un PDF y lo abre con el menú de compartir
+  firebase/
+    config.js                   inicializa Firebase, Auth con sesión persistente y Firestore
+    errores.js                  ErrorApp y traducción de errores de Firebase al español
+    datos.js                    colección del usuario y conversión de fechas
+    usuarios.js                 leer, crear y editar el perfil
+    google.js                   selector de cuentas de Google
+    rotulos.js                  rótulos, generar documentos e historial
+    productos.js                catálogo Mis productos
+  pdf/
+    generarRotulos.js           arma el PDF: hojas, celdas y marcas de corte
+    pintarRotulo.js             dibuja un rótulo
+    plantilla.js                fondo del rótulo en base64
+    compartirPdf.js             guarda el PDF y abre el menú de compartir
   contexto/
-    Sesion.js                   ProveedorSesion y useSesion(): usuario, login, registro y cerrar sesión
+    Sesion.js                   ProveedorSesion y useSesion(): sesión de Firebase y perfil
   navegacion/
     Navegacion.js               stack de acceso + pestañas principales
   pantallas/
@@ -95,8 +147,9 @@ src/
     Registro.js                 crear cuenta
     Inicio.js                   resumen de ofertas y últimos PDF
     CrearAfiche.js              formulario del afiche, lista de rótulos y generar PDF
+    Productos.js                catálogo: crear, listar, editar y borrar
     Historial.js                todos los PDF generados
-    Perfil.js                   datos de la cuenta y cerrar sesión
+    Perfil.js                   ver y editar la cuenta, cerrar sesión
   componentes/                  piezas de interfaz reutilizables (ver tabla abajo)
   utilidades/
     validaciones.js             reglas de los formularios
@@ -115,33 +168,26 @@ assets/                         ícono y splash de la app
 2. Envuelve todo en `SafeAreaProvider` (márgenes de la muesca y la barra de gestos),
    luego en `ProveedorSesion` y dentro monta `Navegacion`.
 
-### Conexión con la API (`src/api/cliente.js`)
+### Firebase (`src/firebase/`)
 
-Todas las pantallas hablan con la API a través de una sola función:
+`config.js` inicia Firebase con las variables de `.env.local` y configura la sesión con AsyncStorage para que siga
+abierta al cerrar la app. Las pantallas no tocan Firestore directamente: usan las funciones de esta carpeta.
 
-```js
-pedir(ruta, { metodo = "GET", cuerpo })
-```
-
-- Arma la URL con `API_URL` (la de Vercel o la de `EXPO_PUBLIC_API_URL`).
-- Si hay `cuerpo`, lo manda como JSON.
-- Usa `credentials: "include"`: la API deja la sesión en la cookie `sesion` y React Native la guarda y la reenvía
-  sola en cada petición, igual que el navegador. Por eso la app no guarda ningún token a mano.
-- Si no hay internet lanza un `ErrorApi` con el mensaje "No hay conexión con el servidor".
-- Si la respuesta no es 2xx, o trae `ok: false` (así responde `/api/login` cuando el correo no existe),
-  lanza un `ErrorApi` con el mensaje de error que mandó el servidor y el código HTTP en `estado`.
+- `coleccionDelUsuario(nombre)` arma la ruta `usuarios/{uid}/{nombre}`, así cada cuenta solo trabaja con lo suyo.
+- `conErrores(operacion)` atrapa cualquier error de Firebase y lo convierte en un `ErrorApp` con el mensaje en español
+  y el `codigo` original.
 
 Cada pantalla atrapa ese error y muestra su `mensaje` con el componente `AvisoError`.
 
-### Descarga de PDF (`src/api/pdf.js`)
+### Generación del PDF (`src/pdf/` y `src/firebase/rotulos.js`)
 
-El PDF lo genera la API y pide la cookie de sesión, por eso no se puede abrir el link directo en el navegador.
-`abrirPdf(ruta, nombre)`:
+El PDF se genera en el celular con `pdf-lib`, con el mismo diseño de la web. `generarDocumento()`:
 
-1. Lo descarga con `fetch` (que sí lleva la cookie).
-2. Convierte el archivo a base64 con `FileReader`.
-3. Lo guarda en la caché del celular con la clase `File` de `expo-file-system`.
-4. Abre el menú del sistema con `Sharing.shareAsync`, desde donde se puede ver, imprimir o mandar por WhatsApp.
+1. Lee los rótulos pendientes (`documento_id == null`) y pinta el PDF. Si esto falla, no se registra nada.
+2. Con una escritura en lote crea el documento y vincula sus rótulos: o se aplican todos los cambios, o ninguno.
+
+El archivo no se guarda en Firestore. `abrirDocumento(id)` lo vuelve a pintar con los rótulos de ese documento, lo guarda en
+la caché y abre el menú del sistema, desde donde se puede ver, imprimir o mandar por WhatsApp.
 
 ### Sesión (`src/contexto/Sesion.js`)
 
@@ -152,12 +198,14 @@ Cualquier pantalla lo usa con `useSesion()`, que devuelve:
 |---|---|
 | `usuario` | Datos del usuario de la sesión, o `null` si no hay sesión |
 | `revisando` | `true` mientras se revisa si hay una sesión guardada |
-| `iniciarSesion(correo, clave)` | `POST /api/login` y luego carga el usuario |
-| `registrar(datos)` | `POST /api/registro` y luego inicia sesión con los mismos datos (la API de registro no abre sesión) |
-| `cerrarSesion()` | `POST /api/logout` y deja `usuario` en `null` |
+| `iniciarSesion(correo, clave)` | `signInWithEmailAndPassword` |
+| `registrar(datos)` | `createUserWithEmailAndPassword`; el perfil se crea con los datos del formulario |
+| `entrarConGoogle()` | Pide el ID token a Google y entra con `signInWithCredential`. Si el usuario cancela no hace nada |
+| `actualizarPerfil(datos)` | Guarda nombre, apellido y negocio |
+| `cerrarSesion()` | Cierra la sesión de Google y de Firebase |
 
-Al abrir la app se consulta `/api/usuario`: si la cookie de una sesión anterior sigue válida (dura 7 días),
-se entra directo sin volver a escribir la contraseña.
+`onAuthStateChanged` avisa cada vez que cambia la sesión, también al abrir la app si ya había una. En ese momento se
+carga el perfil de `usuarios/{uid}`; si es la primera vez que entra, se crea.
 
 ### Navegación (`src/navegacion/Navegacion.js`)
 
@@ -169,6 +217,7 @@ NavigationContainer
     └── con sesión ── Principal (createBottomTabNavigator)
                           ├── Inicio
                           ├── Crear
+                          ├── Productos
                           ├── Historial
                           └── Perfil
 ```
@@ -184,18 +233,15 @@ NavigationContainer
 
 ## Pantallas
 
-| Pantalla | Archivo | Qué hace | API |
+| Pantalla | Archivo | Qué hace | Datos |
 |---|---|---|---|
-| Login | `pantallas/Login.js` | Correo y contraseña. Valida antes de enviar y muestra los errores del servidor (credenciales incorrectas, sin internet). Link a Registro. | `POST /api/login` |
-| Registro | `pantallas/Registro.js` | Nombre, apellido, negocio (opcional), correo, contraseña y confirmación. Al crear la cuenta entra directo a la app. | `POST /api/registro` |
-| Inicio | `pantallas/Inicio.js` | Saludo con el nombre del negocio (o del usuario si no tiene), fecha de hoy, rótulos usados en el mes (de 10 gratis), ofertas activas, ofertas que vencen en los próximos 7 días y los últimos 3 PDF. Se recarga al entrar a la pestaña y al deslizar hacia abajo. | `GET /api/rotulos`, `GET /api/documentos` |
-| Crear | `pantallas/CrearAfiche.js` | Formulario del afiche con vista previa en vivo. "Agregar a la lista" guarda el rótulo y deja las fechas puestas para el siguiente. Muestra los rótulos pendientes (se pueden quitar) y genera el PDF con un diálogo de confirmar, generando y listo. | `GET` y `POST /api/rotulos`, `DELETE /api/rotulos/:id`, `POST /api/rotulos/pdf` |
-| Historial | `pantallas/Historial.js` | Lista con `FlatList` de todos los PDF generados; cada uno se descarga y se abre desde el celular. Se recarga al entrar a la pestaña. | `GET /api/documentos`, `GET /api/documentos/:uuid/pdf` |
-| Perfil | `pantallas/Perfil.js` | Iniciales, nombre, negocio y correo de la cuenta. Botón para abrir Rotula en la web y botón para cerrar sesión con confirmación. | `POST /api/logout` |
-
-Detalle de `CrearAfiche`: la API devuelve las fechas como `2026-10-18T00:00:00.000Z` (medianoche UTC).
-Con `new Date()` en El Salvador (UTC-6) se mostraría el día anterior, por eso la función `fechaMini`
-toma solo la parte de la fecha del texto.
+| Login | `pantallas/Login.js` | Correo y contraseña, o Google. Valida antes de enviar y muestra los errores (credenciales incorrectas, sin internet). Link a Registro. | Firebase Authentication |
+| Registro | `pantallas/Registro.js` | Nombre, apellido, negocio (opcional), correo, contraseña y confirmación, o Google. Al crear la cuenta entra directo a la app. | Authentication, `usuarios/{uid}` |
+| Inicio | `pantallas/Inicio.js` | Saludo con el nombre del negocio (o del usuario si no tiene), fecha de hoy, rótulos usados en el mes (de 10 gratis), ofertas activas, ofertas que vencen en los próximos 7 días y los últimos 3 PDF. Se recarga al entrar a la pestaña y al deslizar hacia abajo. | `rotulos`, `documentos` |
+| Crear | `pantallas/CrearAfiche.js` | Formulario del afiche con vista previa en vivo y opción de elegir un producto guardado. "Agregar a mi lista" guarda el rótulo y deja las fechas puestas para el siguiente. Muestra los rótulos pendientes (se pueden quitar) y genera el PDF con un diálogo de confirmar, generando y listo. | `rotulos`, `documentos`, `productos` |
+| Productos | `pantallas/Productos.js` | Catálogo del negocio: agregar, listar, editar y borrar productos. | `productos` |
+| Historial | `pantallas/Historial.js` | Lista con `FlatList` de todos los PDF generados; cada uno se vuelve a generar y se abre desde el celular. Se recarga al entrar a la pestaña. | `documentos`, `rotulos` |
+| Perfil | `pantallas/Perfil.js` | Iniciales, nombre, negocio y correo. Permite editar nombre, apellido y negocio, y cerrar sesión con confirmación. | `usuarios/{uid}` |
 
 ## Componentes
 
@@ -206,8 +252,9 @@ Están en `src/componentes/` y todas las pantallas los reutilizan para que la ap
 | `Texto` | `peso` (`regular`, `media`, `semi`, `negrita`...) | `Text` con la fuente Figtree y el color de texto del tema |
 | `Boton` | `titulo`, `alPresionar`, `variante`, `icono`, `cargando`, `deshabilitado`, `pequeno` | Botón en forma de píldora. Variantes: `primario` (negro), `acento` (naranja), `secundario` (borde) y `fantasma` (sin fondo). Con `cargando` muestra un indicador y no deja presionar dos veces |
 | `Campo` | `etiqueta`, `error`, `ayuda`, `secreto` y las props de `TextInput` | Etiqueta, caja de texto y mensaje de error debajo. Con `secreto` oculta la contraseña y agrega el botón del ojo |
-| `CampoFecha` | `etiqueta`, `valor`, `alCambiar`, `error` | Selector de fecha: calendario nativo en Android, calendario dentro de un `Modal` en iOS y texto a mano en la versión web. Trabaja con texto `AAAA-MM-DD`, el formato de la API |
+| `CampoFecha` | `etiqueta`, `valor`, `alCambiar`, `error` | Selector de fecha: calendario nativo en Android, calendario dentro de un `Modal` en iOS y texto a mano en la versión web. Trabaja con texto `AAAA-MM-DD`, el formato que se guarda en Firestore |
 | `AvisoError` | `mensaje` | Caja roja con ícono para los errores del servidor. No muestra nada si no hay mensaje |
+| `BotonGoogle` | `alError` | Separador "o" y botón para entrar con Google, usado en Login y Registro |
 | `Logo` | `tamano` | Logo de Rotula en texto |
 | `MarcoAcceso` | `titulo`, `subtitulo` | Marco de Login y Registro: logo, títulos, `SafeAreaView`, `KeyboardAvoidingView` para que el teclado no tape los campos y `ScrollView` |
 | `PantallaCarga` | `texto` | Indicador de carga a pantalla completa |
@@ -219,13 +266,15 @@ Están en `src/componentes/` y todas las pantallas los reutilizan para que la ap
 Todas están en `src/utilidades/validaciones.js`. Cada función recibe los datos del formulario y devuelve un objeto
 `{ campo: "mensaje" }` con los errores encontrados; `hayErrores(errores)` dice si el objeto tiene algo.
 Las pantallas muestran cada mensaje debajo de su campo y lo borran en cuanto el usuario vuelve a escribir.
-Las reglas son las mismas que valida la API, para avisar antes de enviar.
+Las reglas de `firestore.rules` vuelven a comprobar lo principal en el servidor.
 
 | Función | Formulario | Reglas |
 |---|---|---|
 | `validarLogin` | Login | Correo obligatorio y con formato válido. Contraseña obligatoria. |
 | `validarRegistro` | Registro | Nombre y apellido obligatorios, solo letras, de 2 a 60 caracteres. Negocio opcional, máximo 100. Correo válido, máximo 120. Contraseña de al menos 8 caracteres con letras y números. La confirmación debe coincidir. |
 | `validarRotulo` | Crear afiche | Código de barras de 8 a 14 dígitos, solo números. Descripción obligatoria, mínimo 3 caracteres. Precios con formato `1.99` y mayores a 0. Copias enteras, al menos 1. Fecha de inicio obligatoria; fecha fin obligatoria e igual o posterior a la de inicio. |
+| `validarProducto` | Productos | Código de barras opcional, de 8 a 14 dígitos. Descripción obligatoria, mínimo 3 caracteres. Precio con formato `2.50` y mayor a 0. |
+| `validarPerfil` | Perfil | Nombre obligatorio, solo letras, de 2 a 60 caracteres. Apellido opcional con las mismas reglas. Negocio opcional, máximo 100. |
 
 Además se muestran los errores que devuelve el servidor: credenciales incorrectas, correo ya registrado o falta de internet.
 
@@ -235,7 +284,7 @@ Además se muestran los errores que devuelve el servidor: credenciales incorrect
 
 | Función | Ejemplo |
 |---|---|
-| `aTextoFecha(fecha)` | `Date` → `"2026-10-18"` (formato que recibe la API) |
+| `aTextoFecha(fecha)` | `Date` → `"2026-10-18"` (formato que se guarda en Firestore) |
 | `deTextoFecha(texto)` | `"2026-10-18"` → `Date` en hora local |
 | `fechaCorta(texto)` | `"2026-10-18"` → `"18/10/2026"` |
 | `fechaLarga(valor)` | → `"18 oct 2026"` |
@@ -252,19 +301,21 @@ de la web (`app/estilos.css` de Rotula):
 - **`fuentes`**: Figtree de 400 a 900. En React Native cada peso es una familia distinta, por eso hay una por peso.
 - **`radios`**: 12 px en campos, 16 px en tarjetas y 999 px en botones (forma de píldora).
 
-## Endpoints de la API
+## Base de datos en Firestore
 
-| Método | Ruta | Uso |
-|---|---|---|
-| POST | `/api/login` | Iniciar sesión (deja la cookie `sesion`) |
-| POST | `/api/registro` | Crear cuenta |
-| POST | `/api/logout` | Cerrar sesión |
-| GET | `/api/usuario` | Datos del usuario de la sesión |
-| GET / POST | `/api/rotulos` | Listar / agregar rótulos |
-| DELETE | `/api/rotulos/:id` | Quitar un rótulo de la lista |
-| POST | `/api/rotulos/pdf` | Generar el PDF con los rótulos pendientes |
-| GET | `/api/documentos` | Historial de PDF |
-| GET | `/api/documentos/:uuid/pdf` | Descargar un PDF |
+Todo lo de un usuario vive debajo de `usuarios/{uid}`:
+
+| Ruta | Campos |
+|---|---|
+| `usuarios/{uid}` | `nombre`, `apellido`, `nombre_negocio`, `email`, `proveedor`, `fecha_registro` |
+| `usuarios/{uid}/rotulos/{id}` | `ean`, `descripcion`, `precio_oferta`, `precio_unitario`, `copias`, `fecha_inicio`, `fecha_fin`, `documento_id`, `fecha_creacion` |
+| `usuarios/{uid}/documentos/{id}` | `titulo`, `rotulos_por_hoja`, `total_rotulos`, `fecha_creacion` |
+| `usuarios/{uid}/productos/{id}` | `ean`, `descripcion`, `precio`, `fecha_creacion` |
+
+Un rótulo con `documento_id` en `null` está pendiente de imprimir. Las reglas de `firestore.rules` solo dejan acceder al
+dueño de los datos, validan lo que se guarda e impiden cambiar o borrar un rótulo que ya salió en un PDF.
+
+Antes del Avance 2, la app usaba la API REST de la web (`/api/login`, `/api/rotulos`, `/api/documentos`), que dejó de usarse.
 
 ## Trabajo en equipo
 
@@ -274,3 +325,4 @@ Cada integrante trabajó en su propia rama y la unió a `main` con un Pull Reque
 |---|---|---|
 | Gerson Vladimir Borja Alvarez | `feature/base-y-acceso` ([PR #1](https://github.com/Slincker5/rotula-movil/pull/1)) | Configuración del proyecto, tema y componentes base, conexión con la API y manejo de sesión, pantallas de login y registro con sus validaciones, pantalla de perfil y navegación |
 | Ariel Alexander Hernandez Merino | `feature/afiches-e-historial` ([PR #2](https://github.com/Slincker5/rotula-movil/pull/2)) | Utilidades de fechas y campo de fecha, validaciones del afiche, descarga de PDF, pantalla para crear afiches con vista previa, historial, pantalla de inicio, pestañas del módulo principal y documento del avance |
+| Ariel Alexander Hernandez Merino | `feature/firebase` | Avance 2: integración de Firebase Authentication y Firestore, generación del PDF en el celular, Mis productos, edición de perfil y documento de investigación |
