@@ -1,6 +1,6 @@
 // Cada funcion devuelve un objeto { campo: "mensaje" } con los errores encontrados.
 // Si el objeto esta vacio, el formulario es valido.
-// Las reglas son las mismas que valida la API de Rotula, para avisar antes de enviar.
+// Las reglas de firestore.rules vuelven a comprobar lo principal en el servidor.
 
 const REGEX_CORREO = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const REGEX_NOMBRE = /^[A-Za-zÁÉÍÓÚÜÑáéíóúüñ' -]+$/;
@@ -51,6 +51,31 @@ export function validarRegistro({ nombre, apellido, negocio, correo, clave, conf
 
   if (!confirmar) errores.confirmar = "Repite tu contraseña";
   else if (confirmar !== clave) errores.confirmar = "Las contraseñas no coinciden";
+  return errores;
+}
+
+export function validarPerfil({ nombre, apellido, negocio }) {
+  const errores = {};
+  agregar(errores, "nombre", validarNombre(nombre, "nombre"));
+  // las cuentas de Google pueden no traer apellido
+  if (apellido.trim()) agregar(errores, "apellido", validarNombre(apellido, "apellido"));
+  if (negocio.trim().length > 100) errores.negocio = "El nombre del negocio no puede pasar de 100 caracteres";
+  return errores;
+}
+
+export function validarProducto({ ean, descripcion, precio }) {
+  const errores = {};
+  const codigo = ean.trim();
+  if (codigo && !REGEX_DIGITOS.test(codigo)) errores.ean = "El código de barras solo lleva números";
+  else if (codigo && (codigo.length < 8 || codigo.length > 14)) errores.ean = "Debe tener entre 8 y 14 dígitos";
+
+  if (!descripcion.trim()) errores.descripcion = "Escribe la descripción del producto";
+  else if (descripcion.trim().length < 3) errores.descripcion = "La descripción es muy corta";
+
+  const limpio = precio.trim();
+  if (!limpio) errores.precio = "Escribe el precio";
+  else if (!REGEX_PRECIO.test(limpio)) errores.precio = "Usa un precio válido. Ejemplo: 2.50";
+  else if (Number(limpio) <= 0) errores.precio = "El precio debe ser mayor a 0";
   return errores;
 }
 

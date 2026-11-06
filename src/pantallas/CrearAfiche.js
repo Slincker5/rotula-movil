@@ -2,8 +2,8 @@ import { useCallback, useState } from "react";
 import { ActivityIndicator, Alert, Modal, Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
-import { pedir } from "../api/cliente";
-import { abrirPdf } from "../api/pdf";
+import { abrirDocumento, agregarRotulo, generarDocumento, listarPendientes, quitarRotulo } from "../firebase/rotulos";
+import { listarProductos } from "../firebase/productos";
 import { colores, radios } from "../tema";
 import { aTextoFecha } from "../utilidades/fechas";
 import { hayErrores, validarRotulo } from "../utilidades/validaciones";
@@ -24,8 +24,7 @@ const formularioVacio = () => ({
   fechaFin: "",
 });
 
-// la API manda las fechas como "2026-10-18T00:00:00.000Z" (medianoche UTC); con new Date()
-// en El Salvador (UTC-6) se mostraria el dia anterior, por eso se toma solo la parte de la fecha
+// las fechas se guardan como texto "AAAA-MM-DD"
 const fechaMini = (valor) => {
   const [, mes, dia] = String(valor).slice(0, 10).split("-");
   return `${dia}/${mes}`;
@@ -38,14 +37,17 @@ export default function CrearAfiche({ navigation }) {
   const [mensajeOk, setMensajeOk] = useState("");
   const [guardando, setGuardando] = useState(false);
   const [lista, setLista] = useState([]);
+  const [productos, setProductos] = useState([]);
+  const [eligiendo, setEligiendo] = useState(false);
   // estado del dialogo para generar el PDF: null (cerrado), "confirmar", "generando" o el documento listo
   const [dialogo, setDialogo] = useState(null);
 
   // la lista son los rotulos que todavia no salieron en ningun PDF
   const cargarLista = async () => {
     try {
-      const rotulos = await pedir("/api/rotulos");
-      setLista(rotulos.filter((r) => r.documento_id == null));
+      const [pendientes, catalogo] = await Promise.all([listarPendientes(), listarProductos()]);
+      setLista(pendientes);
+      setProductos(catalogo);
     } catch (e) {
       setErrorServidor(e.message);
     }
@@ -56,6 +58,15 @@ export default function CrearAfiche({ navigation }) {
       cargarLista();
     }, []),
   );
+
+  // llena el formulario con un producto del catalogo; el precio guardado es el precio normal
+  const elegirProducto = (producto) => {
+    setForm((actual) => ({ ...actual, ean: producto.ean, descripcion: producto.descripcion, precioNormal: producto.precio.toFixed(2) }));
+    setErrores({});
+    setErrorServidor("");
+    setMensajeOk("");
+    setEligiendo(false);
+  };
 
   const cambiar = (campo) => (valor) => {
     setForm((actual) => ({ ...actual, [campo]: valor }));
@@ -74,18 +85,7 @@ export default function CrearAfiche({ navigation }) {
 
     setGuardando(true);
     try {
-      await pedir("/api/rotulos", {
-        metodo: "POST",
-        cuerpo: {
-          ean: form.ean.trim(),
-          descripcion: form.descripcion.trim(),
-          precio_oferta: form.precioOferta.trim(),
-          precio_unitario: form.precioNormal.trim(),
-          copias: form.copias.trim(),
-          fecha_inicio: form.fechaInicio,
-          fecha_fin: form.fechaFin,
-        },
-      });
+      await agregarRotulo(form);
       const copias = Number(form.copias);
       setMensajeOk(`Listo, ${copias === 1 ? "se agregó 1 rótulo" : `se agregaron ${copias} rótulos`} a tu lista.`);
       // las fechas se mantienen porque casi siempre son las mismas para toda la semana
@@ -106,7 +106,7 @@ export default function CrearAfiche({ navigation }) {
         style: "destructive",
         onPress: async () => {
           try {
-            await pedir(`/api/rotulos/${rotulo.id}`, { metodo: "DELETE" });
+            await quitarRotulo(rotulo.id);
             await cargarLista();
           } catch (e) {
             Alert.alert("No se pudo quitar", e.message);
@@ -119,7 +119,7 @@ export default function CrearAfiche({ navigation }) {
   const generar = async () => {
     setDialogo("generando");
     try {
-      const documento = await pedir("/api/rotulos/pdf", { metodo: "POST" });
+      const documento = await generarDocumento();
       setDialogo(documento);
       setLista([]);
     } catch (e) {
@@ -128,9 +128,9 @@ export default function CrearAfiche({ navigation }) {
     }
   };
 
-  const abrirDocumento = async () => {
+  const abrirGenerado = async () => {
     try {
-      await abrirPdf(dialogo.url, `rotulos-${dialogo.uuid}.pdf`);
+      await abrirDocumento(dialogo.id);
     } catch (e) {
       Alert.alert("No se pudo abrir el PDF", e.message);
     }
@@ -166,6 +166,10 @@ export default function CrearAfiche({ navigation }) {
                 {mensajeOk}
               </Texto>
             </View>
+          )}
+
+          {productos.length > 0 && (
+            <Boton titulo="Elegir de mis productos" icono="cube-outline" variante="secundario" alPresionar={() => setEligiendo(true)} />
           )}
 
           <Campo
@@ -251,7 +255,7 @@ export default function CrearAfiche({ navigation }) {
               <View key={r.id} style={estilos.item}>
                 <View style={estilos.miniatura}>
                   <Texto peso="extra" style={estilos.miniaturaPrecio}>
-                    ${r.precio_oferta}
+                    ${Number(r.precio_oferta).toFixed(2)}
                   </Texto>
                 </View>
                 <View style={estilos.itemInfo}>
@@ -304,7 +308,7 @@ export default function CrearAfiche({ navigation }) {
               </View>
             )}
 
-            {dialogo?.uuid && (
+            {dialogo?.id && (
               <>
                 <View style={estilos.check}>
                   <Ionicons name="checkmark" size={22} color={colores.blanco} />
@@ -313,10 +317,10 @@ export default function CrearAfiche({ navigation }) {
                   Documento listo
                 </Texto>
                 <Texto style={estilos.textoDialogo}>
-                  {dialogo.titulo} · {dialogo.rotulos} rótulos en {dialogo.hojas} {dialogo.hojas === 1 ? "hoja" : "hojas"}. También
+                  {dialogo.titulo} · {dialogo.rotulos} {dialogo.rotulos === 1 ? "rótulo" : "rótulos"} en {dialogo.hojas} {dialogo.hojas === 1 ? "hoja" : "hojas"}. También
                   quedó guardado en tu historial.
                 </Texto>
-                <Boton titulo="Abrir PDF" icono="open-outline" variante="acento" alPresionar={abrirDocumento} />
+                <Boton titulo="Abrir PDF" icono="open-outline" variante="acento" alPresionar={abrirGenerado} />
                 <Boton
                   titulo="Ver historial"
                   variante="secundario"
@@ -328,6 +332,33 @@ export default function CrearAfiche({ navigation }) {
                 <Boton titulo="Cerrar" variante="fantasma" alPresionar={() => setDialogo(null)} />
               </>
             )}
+          </View>
+        </View>
+      </Modal>
+
+      <Modal visible={eligiendo} transparent animationType="fade" onRequestClose={() => setEligiendo(false)}>
+        <View style={estilos.fondoModal}>
+          <View style={estilos.dialogo}>
+            <Texto peso="negrita" style={estilos.tituloDialogo}>
+              Mis productos
+            </Texto>
+            <ScrollView style={estilos.listaProductos} contentContainerStyle={estilos.seccion}>
+              {productos.map((p) => (
+                <Pressable key={p.id} onPress={() => elegirProducto(p)} accessibilityRole="button" style={estilos.item}>
+                  <View style={estilos.itemInfo}>
+                    <Texto peso="semi" numberOfLines={1}>
+                      {p.descripcion}
+                    </Texto>
+                    <Texto style={estilos.itemMeta}>
+                      ${p.precio.toFixed(2)}
+                      {p.ean ? ` · ${p.ean}` : ""}
+                    </Texto>
+                  </View>
+                  <Ionicons name="chevron-forward" size={18} color={colores.textoSuave} />
+                </Pressable>
+              ))}
+            </ScrollView>
+            <Boton titulo="Cerrar" variante="fantasma" alPresionar={() => setEligiendo(false)} />
           </View>
         </View>
       </Modal>
@@ -429,6 +460,9 @@ const estilos = StyleSheet.create({
   itemMeta: {
     fontSize: 12.5,
     color: colores.textoSuave,
+  },
+  listaProductos: {
+    maxHeight: 340,
   },
   fondoModal: {
     flex: 1,

@@ -1,11 +1,13 @@
 import { useState } from "react";
-import { Alert, Linking, ScrollView, StyleSheet, View } from "react-native";
+import { Alert, ScrollView, StyleSheet, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useSesion } from "../contexto/Sesion";
-import { API_URL } from "../api/cliente";
 import { colores, radios } from "../tema";
+import { hayErrores, validarPerfil } from "../utilidades/validaciones";
 import Texto from "../componentes/Texto";
 import Boton from "../componentes/Boton";
+import Campo from "../componentes/Campo";
+import AvisoError from "../componentes/AvisoError";
 
 function Dato({ icono, etiqueta, valor }) {
   return (
@@ -22,8 +24,12 @@ function Dato({ icono, etiqueta, valor }) {
 }
 
 export default function Perfil() {
-  const { usuario, cerrarSesion } = useSesion();
+  const { usuario, actualizarPerfil, cerrarSesion } = useSesion();
   const [saliendo, setSaliendo] = useState(false);
+  const [form, setForm] = useState(null); // null = viendo el perfil; con datos = editando
+  const [errores, setErrores] = useState({});
+  const [errorServidor, setErrorServidor] = useState("");
+  const [guardando, setGuardando] = useState(false);
   const iniciales = `${usuario?.nombre?.[0] ?? ""}${usuario?.apellido?.[0] ?? ""}`.toUpperCase();
 
   const salir = () => {
@@ -34,14 +40,45 @@ export default function Perfil() {
         style: "destructive",
         onPress: async () => {
           setSaliendo(true);
-          await cerrarSesion().catch(() => {});
+          await cerrarSesion().catch((e) => {
+            setSaliendo(false);
+            Alert.alert("No se pudo cerrar sesión", e.message);
+          });
         },
       },
     ]);
   };
 
+  const empezarEdicion = () => {
+    setForm({ nombre: usuario.nombre ?? "", apellido: usuario.apellido ?? "", negocio: usuario.nombre_negocio ?? "" });
+    setErrores({});
+    setErrorServidor("");
+  };
+
+  const cambiar = (campo) => (valor) => {
+    setForm((actual) => ({ ...actual, [campo]: valor }));
+    setErrores((actuales) => ({ ...actuales, [campo]: undefined }));
+    setErrorServidor("");
+  };
+
+  const guardar = async () => {
+    const encontrados = validarPerfil(form);
+    setErrores(encontrados);
+    if (hayErrores(encontrados)) return;
+
+    setGuardando(true);
+    try {
+      await actualizarPerfil(form);
+      setForm(null);
+    } catch (e) {
+      setErrorServidor(e.message);
+    } finally {
+      setGuardando(false);
+    }
+  };
+
   return (
-    <ScrollView style={estilos.pantalla} contentContainerStyle={estilos.contenido}>
+    <ScrollView style={estilos.pantalla} contentContainerStyle={estilos.contenido} keyboardShouldPersistTaps="handled" automaticallyAdjustKeyboardInsets>
       <View style={estilos.cabecera}>
         <View style={estilos.avatar}>
           <Texto peso="negrita" style={estilos.iniciales}>
@@ -54,16 +91,29 @@ export default function Perfil() {
         {usuario?.nombre_negocio ? <Texto style={estilos.negocio}>{usuario.nombre_negocio}</Texto> : null}
       </View>
 
-      <View style={estilos.tarjeta}>
-        <Dato icono="mail-outline" etiqueta="Correo" valor={usuario?.email} />
-        <View style={estilos.separador} />
-        <Dato icono="storefront-outline" etiqueta="Negocio" valor={usuario?.nombre_negocio} />
-        <View style={estilos.separador} />
-        <Dato icono="pricetags-outline" etiqueta="Plan" valor="Gratis · 10 rótulos al mes" />
-      </View>
+      {form ? (
+        <View style={estilos.formulario}>
+          <AvisoError mensaje={errorServidor} />
+          <Campo etiqueta="Nombre" value={form.nombre} onChangeText={cambiar("nombre")} error={errores.nombre} maxLength={60} />
+          <Campo etiqueta="Apellido" value={form.apellido} onChangeText={cambiar("apellido")} error={errores.apellido} maxLength={60} />
+          <Campo etiqueta="Nombre de tu negocio" value={form.negocio} onChangeText={cambiar("negocio")} error={errores.negocio} maxLength={100} />
+          <Boton titulo="Guardar cambios" icono="save-outline" cargando={guardando} alPresionar={guardar} />
+          <Boton titulo="Cancelar" variante="fantasma" alPresionar={() => setForm(null)} />
+        </View>
+      ) : (
+        <>
+          <View style={estilos.tarjeta}>
+            <Dato icono="mail-outline" etiqueta="Correo" valor={usuario?.email} />
+            <View style={estilos.separador} />
+            <Dato icono="storefront-outline" etiqueta="Negocio" valor={usuario?.nombre_negocio} />
+            <View style={estilos.separador} />
+            <Dato icono="pricetags-outline" etiqueta="Plan" valor="Gratis · 10 rótulos al mes" />
+          </View>
 
-      <Boton titulo="Abrir Rotula en la web" icono="globe-outline" variante="secundario" alPresionar={() => Linking.openURL(API_URL)} />
-      <Boton titulo="Cerrar sesión" icono="log-out-outline" cargando={saliendo} alPresionar={salir} />
+          <Boton titulo="Editar perfil" icono="create-outline" variante="secundario" alPresionar={empezarEdicion} />
+          <Boton titulo="Cerrar sesión" icono="log-out-outline" cargando={saliendo} alPresionar={salir} />
+        </>
+      )}
     </ScrollView>
   );
 }
@@ -106,6 +156,14 @@ const estilos = StyleSheet.create({
   },
   tarjeta: {
     paddingHorizontal: 16,
+    borderWidth: 1,
+    borderColor: colores.borde,
+    borderRadius: radios.tarjeta,
+    backgroundColor: colores.blanco,
+  },
+  formulario: {
+    gap: 18,
+    padding: 18,
     borderWidth: 1,
     borderColor: colores.borde,
     borderRadius: radios.tarjeta,

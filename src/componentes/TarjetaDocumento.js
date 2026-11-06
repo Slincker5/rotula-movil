@@ -3,7 +3,7 @@ import { Alert, StyleSheet, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { colores, radios } from "../tema";
 import { fechaLarga } from "../utilidades/fechas";
-import { abrirPdf } from "../api/pdf";
+import { abrirDocumento } from "../firebase/rotulos";
 import Texto from "./Texto";
 import Boton from "./Boton";
 
@@ -15,7 +15,7 @@ export default function TarjetaDocumento({ documento }) {
   const abrir = async () => {
     setAbriendo(true);
     try {
-      await abrirPdf(documento.url_pdf, `rotulos-${documento.uuid}.pdf`);
+      await abrirDocumento(documento.id);
     } catch (error) {
       Alert.alert("No se pudo abrir el PDF", error.message);
     } finally {
@@ -33,7 +33,7 @@ export default function TarjetaDocumento({ documento }) {
           {documento.titulo}
         </Texto>
         <Texto style={estilos.meta}>
-          {documento.total_rotulos} rótulos · {hojas} {hojas === 1 ? "hoja" : "hojas"} ·{" "}
+          {documento.total_rotulos} {documento.total_rotulos === 1 ? "rótulo" : "rótulos"} · {hojas} {hojas === 1 ? "hoja" : "hojas"} ·{" "}
           {fechaLarga(documento.fecha_creacion)}
         </Texto>
       </View>

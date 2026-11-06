@@ -3,9 +3,9 @@ import { RefreshControl, ScrollView, StyleSheet, View } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
 import { useSesion } from "../contexto/Sesion";
-import { pedir } from "../api/cliente";
+import { listarDocumentos, listarRotulos } from "../firebase/rotulos";
 import { colores, radios } from "../tema";
-import { hoyLargo } from "../utilidades/fechas";
+import { deTextoFecha, hoyLargo } from "../utilidades/fechas";
 import Texto from "../componentes/Texto";
 import Boton from "../componentes/Boton";
 import AvisoError from "../componentes/AvisoError";
@@ -25,7 +25,7 @@ export default function Inicio({ navigation }) {
 
   const cargar = async () => {
     try {
-      const [listaRotulos, listaDocumentos] = await Promise.all([pedir("/api/rotulos"), pedir("/api/documentos")]);
+      const [listaRotulos, listaDocumentos] = await Promise.all([listarRotulos(), listarDocumentos()]);
       setRotulos(listaRotulos);
       setDocumentos(listaDocumentos);
       setError("");
@@ -49,10 +49,10 @@ export default function Inicio({ navigation }) {
   // mismos calculos que la pagina de inicio de la web
   const hoy = new Date();
   hoy.setHours(0, 0, 0, 0);
-  const activas = rotulos.filter((r) => new Date(r.fecha_fin) >= hoy);
-  const porVencer = activas.filter((r) => new Date(r.fecha_fin).getTime() < hoy.getTime() + 7 * DIA);
+  const activas = rotulos.filter((r) => deTextoFecha(r.fecha_fin) >= hoy);
+  const porVencer = activas.filter((r) => deTextoFecha(r.fecha_fin).getTime() < hoy.getTime() + 7 * DIA);
   const usadosEsteMes = rotulos.filter((r) => {
-    const creado = new Date(r.fecha_creacion);
+    const creado = r.fecha_creacion;
     return creado.getMonth() === hoy.getMonth() && creado.getFullYear() === hoy.getFullYear();
   }).length;
   const saludo = usuario?.nombre_negocio || usuario?.nombre;
