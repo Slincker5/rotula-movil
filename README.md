@@ -47,17 +47,17 @@ usuario, módulos secundarios (Mis productos y edición de perfil) e historial d
 
 | Herramienta | Versión | Para qué se usa |
 |---|---|---|
-| Expo | SDK 57 | Proyecto, compilación y Expo Go |
-| React Native | 0.86 | Interfaz nativa |
-| React | 19.2 | Componentes y hooks |
+| Expo | SDK 58 | Proyecto, compilación y Expo Go |
+| React Native | 0.88 | Interfaz nativa |
+| React | 19.3 | Componentes y hooks |
 | React Navigation | 7 | Stack de acceso (`native-stack`) y pestañas (`bottom-tabs`) |
 | Firebase JS SDK | 13 | Authentication y Firestore |
 | @react-native-google-signin/google-signin | 17 | Selector de cuentas de Google |
 | @react-native-async-storage/async-storage | 2.2 | Mantener la sesión al cerrar la app |
 | pdf-lib | 1.17 | Generar el PDF de rótulos en el celular |
-| expo-dev-client | SDK 57 | Development build, necesario para entrar con Google |
-| expo-file-system y expo-sharing | SDK 57 | Guardar el PDF en el celular y abrirlo o compartirlo |
-| @react-native-community/datetimepicker | 9.1 | Calendario nativo para elegir fechas |
+| expo-dev-client | SDK 58 | Development build, necesario para entrar con Google |
+| expo-file-system y expo-sharing | SDK 58 | Guardar el PDF en el celular y abrirlo o compartirlo |
+| @react-native-community/datetimepicker | 9.2 | Calendario nativo para elegir fechas |
 | @expo-google-fonts/figtree | 0.4 | Fuente Figtree, la misma de la web |
 | @expo/vector-icons | 15 | Íconos Ionicons |
 
@@ -110,8 +110,8 @@ Google usa código nativo, así que no funciona en Expo Go.
 
 Las reglas viven en `firestore.rules`. Si las cambias, publícalas en Firebase > Firestore > Reglas.
 
-> **Versión de Expo:** el proyecto usa **Expo SDK 57** porque es la versión que soporta el Expo Go de las tiendas en
-> octubre de 2026. Cuando salga el Expo Go para SDK 58, se actualiza con `npx expo install expo@^58.0.0` y luego
+> **Versión de Expo:** el proyecto usa **Expo SDK 58**, la versión del Expo Go de las tiendas en noviembre de 2026.
+> Si Expo Go avisa que el proyecto es incompatible, actualízalo con `npx expo install expo@^VERSION.0.0` y luego
 > `npx expo install --fix`.
 
 ## Estructura del código
