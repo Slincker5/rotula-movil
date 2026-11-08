@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "280278280195",
+    "project_id": "rotula-web",
+    "storage_bucket": "rotula-web.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:280278280195:android:209fafcd09b3e40d468636",
+        "android_client_info": {
+          "package_name": "app.rotula.movil"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "280278280195-41bm6b7bu1b9eupeof0pe7lklov3opuh.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "app.rotula.movil",
+            "certificate_hash": "fde7bfde269192c71746ff47f79799605dcd00a5"
+          }
+        },
+        {
+          "client_id": "280278280195-00n5k4t78ors497nlbf8u9d24k850cje.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDM92S1i51nck3Y5P71lH4Zf1uCFRQE6xM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "280278280195-00n5k4t78ors497nlbf8u9d24k850cje.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -7,6 +7,7 @@ import MarcoAcceso from "../componentes/MarcoAcceso";
 import Campo from "../componentes/Campo";
 import Boton from "../componentes/Boton";
 import AvisoError from "../componentes/AvisoError";
+import BotonGoogle from "../componentes/BotonGoogle";
 import Texto from "../componentes/Texto";
 
 export default function Login({ navigation }) {
@@ -35,11 +36,7 @@ export default function Login({ navigation }) {
       // si sale bien, Navegacion detecta el usuario y cambia a las pestanas
       await iniciarSesion(correo, clave);
     } catch (error) {
-      setErrorServidor(
-        error.estado === 401 || error.message === "Credenciales invalidas"
-          ? "El correo o la contraseña no son correctos."
-          : error.message,
-      );
+      setErrorServidor(error.message);
       setCargando(false);
     }
   };
@@ -76,6 +73,7 @@ export default function Login({ navigation }) {
       />
 
       <Boton titulo="Iniciar sesión" icono="log-in-outline" variante="acento" cargando={cargando} alPresionar={entrar} />
+      <BotonGoogle alError={setErrorServidor} />
 
       <View style={estilos.fila}>
         <Texto style={estilos.texto}>¿Aún no tienes cuenta?</Texto>

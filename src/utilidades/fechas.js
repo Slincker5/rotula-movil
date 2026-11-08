@@ -1,6 +1,6 @@
 const dosDigitos = (n) => String(n).padStart(2, "0");
 
-// la API recibe las fechas como "AAAA-MM-DD"
+// las fechas se guardan como texto "AAAA-MM-DD"
 export const aTextoFecha = (fecha) =>
   `${fecha.getFullYear()}-${dosDigitos(fecha.getMonth() + 1)}-${dosDigitos(fecha.getDate())}`;
 

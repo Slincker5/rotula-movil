@@ -8,7 +8,7 @@ import Texto from "./Texto";
 import Boton from "./Boton";
 import { estilos as estilosCampo } from "./Campo";
 
-// valor y alCambiar usan texto "AAAA-MM-DD", el mismo formato que pide la API
+// valor y alCambiar usan texto "AAAA-MM-DD", el mismo formato que se guarda en Firestore
 export default function CampoFecha({ etiqueta, valor, alCambiar, error, style }) {
   const [abiertoIos, setAbiertoIos] = useState(false);
   const fecha = valor ? deTextoFecha(valor) : new Date();

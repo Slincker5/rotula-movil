@@ -26,7 +26,14 @@
       "expo-font",
       "@react-native-community/datetimepicker",
       "expo-sharing",
-      "expo-status-bar"
-    ]
+      "expo-status-bar",
+      "@react-native-google-signin/google-signin"
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "b0a40ac3-9554-4f6e-a0dc-6f1ee773aec6"
+      }
+    },
+    "owner": "hernand.m"
   }
 }

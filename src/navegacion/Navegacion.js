@@ -10,6 +10,7 @@ import Login from "../pantallas/Login";
 import Registro from "../pantallas/Registro";
 import Inicio from "../pantallas/Inicio";
 import CrearAfiche from "../pantallas/CrearAfiche";
+import Productos from "../pantallas/Productos";
 import Historial from "../pantallas/Historial";
 import Perfil from "../pantallas/Perfil";
 
@@ -25,6 +26,7 @@ const tema = {
 const iconos = {
   Inicio: "home",
   CrearAfiche: "add-circle",
+  Productos: "cube",
   Historial: "time",
   Perfil: "person-circle",
 };
@@ -45,6 +47,7 @@ function PestanasPrincipales() {
     >
       <Pestanas.Screen name="Inicio" component={Inicio} />
       <Pestanas.Screen name="CrearAfiche" component={CrearAfiche} options={{ title: "Crear" }} />
+      <Pestanas.Screen name="Productos" component={Productos} />
       <Pestanas.Screen name="Historial" component={Historial} />
       <Pestanas.Screen name="Perfil" component={Perfil} />
     </Pestanas.Navigator>

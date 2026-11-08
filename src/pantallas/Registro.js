@@ -7,6 +7,7 @@ import MarcoAcceso from "../componentes/MarcoAcceso";
 import Campo from "../componentes/Campo";
 import Boton from "../componentes/Boton";
 import AvisoError from "../componentes/AvisoError";
+import BotonGoogle from "../componentes/BotonGoogle";
 import Texto from "../componentes/Texto";
 
 const vacio = { nombre: "", apellido: "", negocio: "", correo: "", clave: "", confirmar: "" };
@@ -33,7 +34,7 @@ export default function Registro({ navigation }) {
     try {
       await registrar(datos);
     } catch (error) {
-      if (error.estado === 409) setErrores({ correo: "Ese correo ya tiene una cuenta. Inicia sesión." });
+      if (error.codigo === "auth/email-already-in-use") setErrores({ correo: error.message });
       else setErrorServidor(error.message);
       setCargando(false);
     }
@@ -111,6 +112,7 @@ export default function Registro({ navigation }) {
       />
 
       <Boton titulo="Crear mi cuenta" icono="person-add-outline" variante="acento" cargando={cargando} alPresionar={crearCuenta} />
+      <BotonGoogle alError={setErrorServidor} />
 
       <View style={estilos.fila}>
         <Texto style={estilos.texto}>¿Ya tienes cuenta?</Texto>
