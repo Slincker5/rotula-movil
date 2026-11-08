@@ -94,11 +94,16 @@ Google usa código nativo, así que no funciona en Expo Go.
    npx eas-cli build --profile development --platform android
    ```
 
-3. Copia la huella SHA-1 del build en Firebase > Configuración del proyecto > app Android:
+3. Copia la huella SHA-1 de la firma del build en Firebase > Configuración del proyecto > app Android.
+   Este proyecto usa credenciales locales (`credentials.json` y `rotula-dev.jks`, ignorados por git), así que
+   la huella se obtiene del keystore:
 
    ```bash
-   npx eas-cli credentials --platform android
+   keytool -list -v -keystore rotula-dev.jks
    ```
+
+   Guarda el keystore en un lugar seguro: si se pierde, un build nuevo tendrá otra huella y habrá que
+   registrarla otra vez en Firebase.
 
 4. Vuelve a descargar `google-services.json` después de agregar la huella, crea el build otra vez y corre:
 
